@@ -90,7 +90,6 @@ async fn eth_demo<R: bitbox_api::runtime::Runtime>() {
     let raw_tx = hex::decode("f0010184773594008502540be40082520894d61054f4456d0555dc2dd82b77f7ad6074836149865af3107a400080808080").unwrap();
     let signature = paired_bitbox
         .eth_sign_1559_transaction(
-            1,
             &"m/44'/60'/0'/0/0".try_into().unwrap(),
             &raw_tx.as_slice().try_into().unwrap(),
         )

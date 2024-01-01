@@ -107,7 +107,7 @@ pub struct Transaction {
     serde(rename_all = "camelCase")
 )]
 pub struct EIP1559Transaction {
-    pub decoded_chain_id: Vec<u8>,
+    pub chain_id: Vec<u8>,
     /// Nonce must be big-endian encoded, no trailing zeroes.
     pub nonce: Vec<u8>,
     /// Max priority fee must be big-endian encoded, no trailing zeroes.
@@ -490,7 +490,6 @@ impl<R: Runtime> PairedBitBox<R> {
     /// `raw_tx_slice.try_into()` (`rlp` feature required).
     pub async fn eth_sign_1559_transaction(
         &self,
-        chain_id: u64,
         keypath: &Keypath,
         tx: &EIP1559Transaction,
     ) -> Result<[u8; 65], Error> {
@@ -498,23 +497,16 @@ impl<R: Runtime> PairedBitBox<R> {
         self.validate_version(">=9.16.0")?;
 
         let host_nonce = crate::antiklepto::gen_host_nonce()?;
-        let decoded_chain_id: u64;
+        let chain_id: u64;
 
-        if tx.decoded_chain_id.len() == 1 {
-            let id = tx.decoded_chain_id[0];
-            decoded_chain_id = id as u64;
+        if tx.chain_id.len() == 1 {
+            let id = tx.chain_id[0];
+            chain_id = id as u64;
         } else {
-            panic!("decoded_chain_id must be 1 byte long");
-        }
-
-        if decoded_chain_id != chain_id {
-            panic!(
-                "chainID argument ({}) does not match chainID encoded in transaction ({})",
-                chain_id, decoded_chain_id
-            );
+            panic!("chain_id must be 1 byte long");
         }
         let request = pb::eth_request::Request::SignEip1559(pb::EthSignEip1559Request {
-            chain_id: decoded_chain_id,
+            chain_id: chain_id,
             keypath: keypath.to_vec(),
             nonce: crate::util::remove_leading_zeroes(&tx.nonce),
             max_priority_fee_per_gas: crate::util::remove_leading_zeroes(&tx.max_priority_fee_per_gas),

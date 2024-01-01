@@ -403,13 +403,12 @@ impl PairedBitBox {
     #[wasm_bindgen(js_name = ethSign1559Transaction)]
     pub async fn eth_sign_1559_transaction(
         &self,
-        chain_id: u64,
         keypath: types::TsKeypath,
         tx: types::TsEth1559Transaction,
     ) -> Result<types::TsEthSignature, JavascriptError> {
         let signature = self
             .0
-            .eth_sign_1559_transaction(chain_id, &keypath.try_into()?, &tx.try_into()?)
+            .eth_sign_1559_transaction(&keypath.try_into()?, &tx.try_into()?)
             .await?;
 
         Ok(serde_wasm_bindgen::to_value(&types::EthSignature {
