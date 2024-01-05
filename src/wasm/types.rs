@@ -54,7 +54,7 @@ type EthTransaction = {
 };
 // chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit and value must be big-endian encoded, no trailing zeroes.
 type Eth1559Transaction = {
-  chainId: Uint8Array;
+  chainId: number;
   nonce: Uint8Array;
   maxPriorityFeePerGas: Uint8Array;
   maxFeePerGas: Uint8Array;
@@ -272,7 +272,7 @@ impl TryFrom<TsEth1559Transaction> for crate::eth::EIP1559Transaction {
   type Error = JavascriptError;
   fn try_from(value: TsEth1559Transaction) -> Result<Self, Self::Error> {
       serde_wasm_bindgen::from_value(value.into())
-          .map_err(|_| JavascriptError::InvalidType("wrong type for EthTransaction"))
+          .map_err(|_| JavascriptError::InvalidType("wrong type for Eth1559Transaction"))
   }
 }
 

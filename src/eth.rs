@@ -107,7 +107,7 @@ pub struct Transaction {
     serde(rename_all = "camelCase")
 )]
 pub struct EIP1559Transaction {
-    pub chain_id: Vec<u8>,
+    pub chain_id: u64,
     /// Nonce must be big-endian encoded, no trailing zeroes.
     pub nonce: Vec<u8>,
     /// Max priority fee must be big-endian encoded, no trailing zeroes.
@@ -145,10 +145,14 @@ impl TryFrom<&[u8]> for EIP1559Transaction {
     type Error = ();
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let [decoded_chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, recipient, value, data, _, _, _]: [Vec<u8>; 11] =
+        let [chain_id, nonce, max_priority_fee_per_gas, max_fee_per_gas, gas_limit, recipient, value, data, _, _, _]: [Vec<u8>; 11] =
             rlp::decode_list(value).try_into().map_err(|_| ())?;
+        while chain_id.len() < 8 {
+            chain_id.insert(0, 0);
+        }
+        chain_id = u64::from_be_bytes(chain_id.try_into().expect("chain_id must be 8 bytes long after padding"));
         Ok(EIP1559Transaction {
-            decoded_chain_id,
+            chain_id,
             nonce,
             max_priority_fee_per_gas,
             max_fee_per_gas,
@@ -497,16 +501,8 @@ impl<R: Runtime> PairedBitBox<R> {
         self.validate_version(">=9.16.0")?;
 
         let host_nonce = crate::antiklepto::gen_host_nonce()?;
-        let chain_id: u64;
-
-        if tx.chain_id.len() == 1 {
-            let id = tx.chain_id[0];
-            chain_id = id as u64;
-        } else {
-            panic!("chain_id must be 1 byte long");
-        }
         let request = pb::eth_request::Request::SignEip1559(pb::EthSignEip1559Request {
-            chain_id: chain_id,
+            chain_id: tx.chain_id,
             keypath: keypath.to_vec(),
             nonce: crate::util::remove_leading_zeroes(&tx.nonce),
             max_priority_fee_per_gas: crate::util::remove_leading_zeroes(&tx.max_priority_fee_per_gas),
